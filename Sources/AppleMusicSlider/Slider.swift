@@ -8,37 +8,50 @@
 
 import UIKit
 
-class Slider: UIControl {
+// MARK: - Enums
+
+fileprivate enum Direction {
+  case up
+  case down
+}
+
+public final class Slider: UIControl {
 
   // MARK: - Constants
 
-  private enum Constants {
+  private enum SliderConstants {
     static let kOne: CGFloat = 1.0
+    static let kTwo: CGFloat = 2.0
     static let animationDuration: TimeInterval = 0.2
     static let thumbShadowOpacity: Float = 0.3
     static let thumShadowRadius: CGFloat = 3.0
+    static let kMultiplier: CGFloat = 0.1
+  }
+
+  private enum AccessibilityStrings {
+    static let kSliderLabel = "Track Position"
   }
 
   // MARK: - Public Properties
 
   private(set) var primaryColor: UIColor = UIColor.red
   private(set) var secondaryColor: UIColor = UIColor.orange
+  private(set) var value: CGFloat = .zero
+  private(set) var minValue: CGFloat = .zero
+  private(set) var maxValue: CGFloat = SliderConstants.kOne
 
   // MARK: - Private Properties
-  private let minValue: CGFloat = .zero
-  private let maxValue: CGFloat = Constants.kOne
+
   private var previousTouchLocation: CGPoint = .zero
-
-  private var value: CGFloat = .zero
-
-  private var halfThumbWidth: CGFloat {
-    return thumb.bounds.width / 2
-  }
+  private let valueIncrement: CGFloat = 0.1
 
   // MARK: - IBOutlets
+
   private var thumbLeadingConstraint: NSLayoutConstraint!
   private var thumbHeightConstraint: NSLayoutConstraint!
   private var filledBackgroundWidthConstraint: NSLayoutConstraint!
+
+  // MARK: - Private Properties
 
   private lazy var backgroundView: UIView = {
     let view = UIView()
@@ -62,10 +75,26 @@ class Slider: UIControl {
     return thumb
   }()
 
+  // MARK: - Private Computed Properties
+
+  private var halfThumbWidth: CGFloat {
+    return thumb.bounds.width / SliderConstants.kTwo
+  }
+
+  /// Here frame's height is the same as thumb height and thumb width.
+  private var thumbInitialPosition: CGFloat {
+    return -(frame.height / SliderConstants.kTwo) + (Constants.kThumbSmallSize / SliderConstants.kTwo)
+  }
+
+  private var thumbFinalPosition: CGFloat {
+    return backgroundView.bounds.width - (frame.height / SliderConstants.kTwo) - (Constants.kThumbSmallSize / SliderConstants.kTwo)
+  }
+
   // MARK: - Initializers
 
   override init(frame: CGRect) {
     super.init(frame: frame)
+    backgroundColor = .white
     finishInit()
   }
 
@@ -76,7 +105,18 @@ class Slider: UIControl {
 
   private func finishInit() {
     setUpView()
+    setUpAccessibilityElements()
     setUpConstraints()
+  }
+
+  // MARK: - Public Methods
+
+
+  /// Updates slider value and adjusts the position of thumb
+  /// - Parameter value: Slider value.
+  public func updateSlider(value: Double) {
+    self.value = CGFloat(value)
+    updateThumbPosition()
   }
 
   // MARK: - Private Methods
@@ -85,7 +125,7 @@ class Slider: UIControl {
     addSubview(backgroundView)
     addSubview(filledBackgroundView)
     addSubview(thumb)
-    backgroundColor = .white
+    backgroundColor = .clear
   }
 
   private func setUpConstraints() {
@@ -99,7 +139,7 @@ class Slider: UIControl {
       backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
       backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
       backgroundView.centerYAnchor.constraint(equalTo: centerYAnchor),
-      backgroundView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.1, constant: .zero)
+      backgroundView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: SliderConstants.kMultiplier, constant: .zero)
     ])
   }
 
@@ -108,13 +148,13 @@ class Slider: UIControl {
     NSLayoutConstraint.activate([
       filledBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
       filledBackgroundView.centerYAnchor.constraint(equalTo: centerYAnchor),
-      filledBackgroundView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.1, constant: .zero),
+      filledBackgroundView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: SliderConstants.kMultiplier, constant: .zero),
       filledBackgroundWidthConstraint
     ])
   }
 
   private func setUpThumbConstraints() {
-    thumbLeadingConstraint = thumb.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -frame.height/2)
+    thumbLeadingConstraint = thumb.leadingAnchor.constraint(equalTo: leadingAnchor, constant: thumbInitialPosition)
     thumbHeightConstraint = thumb.heightAnchor.constraint(equalTo: heightAnchor)
     NSLayoutConstraint.activate([
       thumb.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -131,16 +171,25 @@ class Slider: UIControl {
     return min(max(value, lowerValue), upperValue)
   }
 
+  private func updateThumbPosition() {
+    let deltaWidth = thumbFinalPosition - thumbInitialPosition
+    let offset = halfThumbWidth - (Constants.kThumbSmallSize / SliderConstants.kTwo)
+    let thumbPosition = value * deltaWidth - offset
+    let filledBackgroundPosition = value * backgroundView.bounds.width
+    thumbLeadingConstraint.constant = thumbPosition
+    filledBackgroundWidthConstraint.constant = filledBackgroundPosition
+  }
+
   // MARK: - Animations
 
   private func animateBeginTracking() {
     UIView.animate(
-      withDuration: Constants.animationDuration,
+      withDuration: SliderConstants.animationDuration,
       delay: .zero,
       options: [.curveLinear],
       animations: { [weak self] in
         guard let self = self else { return }
-        self.thumb.startAnimation(with: self.secondaryColor)
+        self.thumb.increaseSize(with: self.secondaryColor)
         self.filledBackgroundView.backgroundColor = self.secondaryColor
         self.setNeedsLayout()
     })
@@ -148,15 +197,32 @@ class Slider: UIControl {
 
   private func animateEndTracking() {
     UIView.animate(
-      withDuration: Constants.animationDuration,
+      withDuration: SliderConstants.animationDuration,
       delay: .zero,
       options: [.curveLinear],
       animations: { [weak self] in
         guard let self = self else { return }
-        self.thumb.endAnimation(with: self.primaryColor)
+        self.thumb.setUpIdentity()
         self.filledBackgroundView.backgroundColor = self.primaryColor
         self.setNeedsLayout()
     })
+  }
+
+  // MARK: - Accessibility Features
+
+  public override var accessibilityValue: String? {
+    get {
+      return "\(Int(value * 10)))"
+    }
+    set {
+      super.accessibilityValue = newValue
+    }
+  }
+
+  private func setUpAccessibilityElements() {
+    isAccessibilityElement = true
+    accessibilityTraits = .adjustable
+    accessibilityLabel = AccessibilityStrings.kSliderLabel
   }
 }
 
@@ -164,7 +230,7 @@ class Slider: UIControl {
 
 extension Slider {
 
-  override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+  public override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
     super.beginTracking(touch, with: event)
 
     previousTouchLocation = touch.location(in: self)
@@ -175,7 +241,7 @@ extension Slider {
     return thumb.isHighlighted
   }
 
-  override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+  public override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
     super.continueTracking(touch, with: event)
 
     let touchLocation = touch.location(in: self)
@@ -188,24 +254,26 @@ extension Slider {
     let range = backgroundView.bounds.minX...backgroundView.frame.width
 
     if thumb.isHighlighted, range.contains(touchLocation.x) {
-      thumbLeadingConstraint.constant = touchLocation.x - halfThumbWidth
+      thumbLeadingConstraint.constant = boundValue(touchLocation.x - halfThumbWidth, toLowerValue: thumbInitialPosition, andUpperValue: thumbFinalPosition)
       filledBackgroundWidthConstraint.constant = touchLocation.x
     }
     sendActions(for: .valueChanged)
     return true
   }
 
-  override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
+  public override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
     super.endTracking(touch, with: event)
     thumb.isHighlighted = false
     animateEndTracking()
     sendActions(for: .editingDidEnd)
   }
 
-  override func cancelTracking(with event: UIEvent?) {
+  public override func cancelTracking(with event: UIEvent?) {
     super.cancelTracking(with: event)
     thumb.isHighlighted = false
     animateEndTracking()
     sendActions(for: .editingDidEnd)
   }
 }
+
+

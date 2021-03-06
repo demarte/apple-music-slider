@@ -8,13 +8,12 @@
 
 import UIKit
 
-class Thumb: UIImageView {
+final class Thumb: UIImageView {
 
   // MARK: - Constants
-  private enum Constants {
+  private enum ThumbConstants {
     static let thumbShadowOpacity: Float = 0.3
     static let thumShadowRadius: CGFloat = 3.0
-    static let thumbSmallSize: CGFloat = 8.0
     static let scaleFactor: CGFloat = 3.0
   }
 
@@ -25,9 +24,9 @@ class Thumb: UIImageView {
     let view = UIImageView()
     view.isUserInteractionEnabled = false
     view.translatesAutoresizingMaskIntoConstraints = false
-    view.layer.cornerRadius = Constants.thumbSmallSize / 2
-    view.layer.shadowOpacity = Constants.thumbShadowOpacity
-    view.layer.shadowRadius = Constants.thumShadowRadius
+    view.layer.cornerRadius = Constants.kThumbSmallSize / 2
+    view.layer.shadowOpacity = ThumbConstants.thumbShadowOpacity
+    view.layer.shadowRadius = ThumbConstants.thumShadowRadius
     view.layer.shadowColor = UIColor.black.cgColor
     view.layer.shadowOffset = .zero
     return view
@@ -48,14 +47,20 @@ class Thumb: UIImageView {
 
   // MARK: - Public Methods
 
-  func endAnimation(with color: UIColor) {
+
+  /// Tranforms thumb view back to identity.
+  /// - Parameter color: a color thar will appear in the end of animation.
+  func setUpIdentity() {
     smallThumb.transform = .identity
     smallThumb.backgroundColor = color
   }
 
-  func startAnimation(with color: UIColor) {
+
+  /// Transforms the thumb view size and change the color.
+  /// - Parameter color: a color that will appear during animation
+  func increaseSize(with color: UIColor) {
     var transform = CGAffineTransform.identity
-    transform = transform.scaledBy(x: Constants.scaleFactor, y: Constants.scaleFactor)
+    transform = transform.scaledBy(x: ThumbConstants.scaleFactor, y: ThumbConstants.scaleFactor)
     smallThumb.transform = transform
     smallThumb.backgroundColor = color
   }
@@ -79,7 +84,8 @@ class Thumb: UIImageView {
       smallThumb.centerYAnchor.constraint(equalTo: centerYAnchor),
       smallThumb.centerXAnchor.constraint(equalTo: centerXAnchor),
       smallThumb.heightAnchor.constraint(equalTo: smallThumb.widthAnchor),
-      smallThumb.widthAnchor.constraint(equalToConstant: Constants.thumbSmallSize)
+      smallThumb.widthAnchor.constraint(equalToConstant: Constants.kThumbSmallSize)
     ])
   }
 }
+
