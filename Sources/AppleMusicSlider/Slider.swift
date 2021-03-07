@@ -26,6 +26,7 @@ public final class Slider: UIControl {
     static let thumbShadowOpacity: Float = 0.3
     static let thumShadowRadius: CGFloat = 3.0
     static let kMultiplier: CGFloat = 0.1
+    static let kValueIncrement: CGFloat = 0.1
   }
 
   private enum AccessibilityStrings {
@@ -34,16 +35,16 @@ public final class Slider: UIControl {
 
   // MARK: - Public Properties
 
-  private(set) var primaryColor: UIColor = UIColor.red
-  private(set) var secondaryColor: UIColor = UIColor.orange
-  private(set) var value: CGFloat = .zero
-  private(set) var minValue: CGFloat = .zero
-  private(set) var maxValue: CGFloat = SliderConstants.kOne
+  public var value: CGFloat = .zero
 
   // MARK: - Private Properties
 
+  private let minValue: CGFloat = .zero
+  private let maxValue: CGFloat = SliderConstants.kOne
+  private var primaryColor: UIColor = UIColor.red
+  private var secondaryColor: UIColor = UIColor.orange
   private var previousTouchLocation: CGPoint = .zero
-  private let valueIncrement: CGFloat = 0.1
+  private let valueIncrement: CGFloat = SliderConstants.kValueIncrement
 
   // MARK: - IBOutlets
 
@@ -111,6 +112,15 @@ public final class Slider: UIControl {
 
   // MARK: - Public Methods
 
+
+  /// Sets up the slider with primary and secondary color.
+  /// - Parameters:
+  ///   - primaryColor: the default color of slider.
+  ///   - secondaryColor: the color of slider when the animation is running.
+  public func setUpSlider(primaryColor: UIColor, secondaryColor: UIColor) {
+    self.primaryColor = primaryColor
+    self.secondaryColor = secondaryColor
+  }
 
   /// Updates slider value and adjusts the position of thumb
   /// - Parameter value: Slider value.
