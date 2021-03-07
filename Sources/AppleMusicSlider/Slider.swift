@@ -212,7 +212,7 @@ public final class Slider: UIControl {
       options: [.curveLinear],
       animations: { [weak self] in
         guard let self = self else { return }
-        self.thumb.setUpIdentity()
+        self.thumb.setUpIdentity(with: self.primaryColor)
         self.filledBackgroundView.backgroundColor = self.primaryColor
         self.setNeedsLayout()
     })

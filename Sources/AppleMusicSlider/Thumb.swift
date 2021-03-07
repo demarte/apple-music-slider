@@ -50,7 +50,7 @@ final class Thumb: UIImageView {
 
   /// Tranforms thumb view back to identity.
   /// - Parameter color: a color thar will appear in the end of animation.
-  func setUpIdentity() {
+  func setUpIdentity(with color: UIColor) {
     smallThumb.transform = .identity
     smallThumb.backgroundColor = color
   }
