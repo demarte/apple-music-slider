@@ -2,6 +2,8 @@
 
 A custom Slider View written in Swift. It has been inspired by the Apple Music's slider.
 
+![alt text](https://github.com/demarte/apple-music-slider/tree/main/Readme/slider.gif "Slider")
+
 ## Requirements
 - iOS 12.0+
 - Xcode 11+
